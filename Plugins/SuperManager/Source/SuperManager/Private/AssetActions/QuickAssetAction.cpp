@@ -13,7 +13,7 @@ void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 {
 	if (NumOfDuplicates <= 0)
 	{
-		PrintMessage("please enter valid num", FColor::Red);
+		ShowMessageDialog(EAppMsgType::Ok,TEXT("Please enter a VALID number"));
 		return;
 	}
 
@@ -33,6 +33,7 @@ void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 				PrintMessage(FString::Printf(TEXT("%s has existed"), *NewAssetPath), FColor::Red);
 				continue;
 			}
+			
 			if (UEditorAssetLibrary::DuplicateAsset(SourceAssetPath, NewAssetPath))
 			{
 				UEditorAssetLibrary::SaveAsset(NewAssetPath, false);
@@ -43,6 +44,6 @@ void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 
 	if (Counter > 0)
 	{
-		PrintMessage(TEXT("Successfully duplicated ") + FString::FromInt(Counter) + " files", FColor::Red);
+		ShowNotifyInfo(TEXT("Successfully duplicated ") + FString::FromInt(Counter) + " files");
 	}
 }
