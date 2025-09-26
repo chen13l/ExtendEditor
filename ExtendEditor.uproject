@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{1B0D22D3-4876-515E-6717-FAA3104B2B9A}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "ExtendEditor",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
+	]
+}
