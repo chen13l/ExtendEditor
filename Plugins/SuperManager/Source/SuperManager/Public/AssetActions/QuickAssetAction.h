@@ -31,6 +31,8 @@ public:
 	UFUNCTION(CallInEditor)
 	void AddPrefixes();
 
+	UFUNCTION(CallInEditor)
+	void RemoveUnusedAssets();
 private:
 	UPROPERTY(EditAnywhere)
 	TMap<UClass*, FString> PrefixMap =

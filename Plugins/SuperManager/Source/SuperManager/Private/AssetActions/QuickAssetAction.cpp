@@ -2,6 +2,7 @@
 #include "DebugHeader.h"
 #include "EditorUtilityLibrary.h"
 #include "EditorAssetLibrary.h"
+#include "ObjectTools.h"
 
 void UQuickAssetAction::ExecuteAction()
 {
@@ -84,4 +85,29 @@ void UQuickAssetAction::AddPrefixes()
 	}
 
 	if (Counter > 0) { ShowNotifyInfo(TEXT("Successfully rename "+FString::FromInt(Counter) + " assets")); }
+}
+
+void UQuickAssetAction::RemoveUnusedAssets()
+{
+	TArray<FAssetData> SelectedAssetData = UEditorUtilityLibrary::GetSelectedAssetData();
+	TArray<FAssetData> UnusedAssets;
+
+	for (const FAssetData& AssetData : SelectedAssetData)
+	{
+		TArray<FString> AssetRefs = UEditorAssetLibrary::FindPackageReferencersForAsset(AssetData.GetObjectPathString());
+		if (AssetRefs.Num() == 0)
+		{
+			UnusedAssets.AddUnique(AssetData);
+		}
+	}
+
+	if (UnusedAssets.Num() == 0)
+	{
+		ShowMessageDialog(EAppMsgType::Ok,TEXT("No unused asset"), false);
+		return;
+	}
+
+	int32 DeleteAssetsNum = ObjectTools::DeleteAssets(UnusedAssets);
+	if (DeleteAssetsNum == 0){return;}
+	ShowNotifyInfo(TEXT("Successfully delete ") + FString::FromInt(DeleteAssetsNum) + " assets");
 }
