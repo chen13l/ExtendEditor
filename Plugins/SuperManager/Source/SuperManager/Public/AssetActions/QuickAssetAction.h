@@ -33,6 +33,10 @@ public:
 
 	UFUNCTION(CallInEditor)
 	void RemoveUnusedAssets();
+
+	UFUNCTION(CallInEditor)
+	void FixUpRedirectors();
+	
 private:
 	UPROPERTY(EditAnywhere)
 	TMap<UClass*, FString> PrefixMap =

@@ -1,8 +1,11 @@
 ﻿#include "AssetActions/QuickAssetAction.h"
+
+#include "AssetToolsModule.h"
 #include "DebugHeader.h"
 #include "EditorUtilityLibrary.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 
 void UQuickAssetAction::ExecuteAction()
 {
@@ -92,6 +95,8 @@ void UQuickAssetAction::RemoveUnusedAssets()
 	TArray<FAssetData> SelectedAssetData = UEditorUtilityLibrary::GetSelectedAssetData();
 	TArray<FAssetData> UnusedAssets;
 
+	FixUpRedirectors();
+
 	for (const FAssetData& AssetData : SelectedAssetData)
 	{
 		TArray<FString> AssetRefs = UEditorAssetLibrary::FindPackageReferencersForAsset(AssetData.GetObjectPathString());
@@ -110,4 +115,30 @@ void UQuickAssetAction::RemoveUnusedAssets()
 	int32 DeleteAssetsNum = ObjectTools::DeleteAssets(UnusedAssets);
 	if (DeleteAssetsNum == 0){return;}
 	ShowNotifyInfo(TEXT("Successfully delete ") + FString::FromInt(DeleteAssetsNum) + " assets");
+}
+
+void UQuickAssetAction::FixUpRedirectors()
+{
+	TArray<UObjectRedirector*> RedirectorsToFix;
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::Get().LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+	FARFilter Filter;
+	Filter.bRecursivePaths = true;
+	Filter.PackagePaths.Add("/Game");
+	Filter.ClassPaths.Add(FTopLevelAssetPath("/Game","ObjectRedirector"));
+
+	TArray<FAssetData> OutAssetData;
+	AssetRegistryModule.Get().GetAssets(Filter,OutAssetData);
+
+	for (const FAssetData& RedirectAssetData : OutAssetData)
+	{
+		if (UObjectRedirector* Redirector = Cast<UObjectRedirector>(RedirectAssetData.GetAsset()))
+		{
+			RedirectorsToFix.AddUnique(Redirector);
+		}
+	}
+
+	FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	AssetToolsModule.Get().FixupReferencers(RedirectorsToFix);
 }
