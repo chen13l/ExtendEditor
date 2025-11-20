@@ -2,11 +2,14 @@
 
 #include "SuperManager.h"
 
+#include "ContentBrowserModule.h"
+
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
 void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	InitContentBrowserMenuExtension();
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -15,6 +18,50 @@ void FSuperManagerModule::ShutdownModule()
 	// we call this function before unloading the module.
 }
 
+#pragma region ContentBrowserMenuExtension
+
+void FSuperManagerModule::InitContentBrowserMenuExtension()
+{
+	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
+	TArray<FContentBrowserMenuExtender_SelectedPaths>& CBMenuExtenders = ContentBrowserModule.GetAllPathViewContextMenuExtenders();
+
+	CBMenuExtenders.Add(FContentBrowserMenuExtender_SelectedPaths::CreateRaw(this, &FSuperManagerModule::CustomCBMenuExtenderCallback));
+}
+
+TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtenderCallback(const TArray<FString>& SelectedPaths)
+{
+	TSharedRef<FExtender> MenuExtender(new FExtender());
+
+	if (SelectedPaths.Num() > 0)
+	{
+		MenuExtender->AddMenuExtension(
+			FName("Delete"),
+			EExtensionHook::After,
+			TSharedPtr<FUICommandList>(),
+			FMenuExtensionDelegate::CreateRaw(this, &FSuperManagerModule::AddCBMenuEntry));
+	}
+
+	return MenuExtender;
+}
+
+void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
+{
+	MenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("Delete Unused Assets")),
+		FText::FromString(TEXT("Unused Assets")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetButtonClicked)
+	);
+}
+
+void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
+{
+}
+
+
+#pragma endregion ContentBrowserMenuExtension
+
+
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FSuperManagerModule, SuperManager)
