@@ -23,5 +23,8 @@ private:
 	void AddCBMenuEntry(FMenuBuilder& MenuBuilder);
 
 	void OnDeleteUnusedAssetButtonClicked();
+	void OnDeleteEmptyFolderButtonClicked();
+
+	void FixUpRedirectors();
 #pragma endregion ContentBrowserMenuExtension
 };

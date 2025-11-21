@@ -2,10 +2,13 @@
 
 #include "SuperManager.h"
 
+#include "AssetToolsModule.h"
 #include "ContentBrowserModule.h"
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "AssetRegistry/IAssetRegistry.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -25,12 +28,15 @@ void FSuperManagerModule::ShutdownModule()
 
 void FSuperManagerModule::InitContentBrowserMenuExtension()
 {
+	//get hold of all the menu extenders
 	FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
 	TArray<FContentBrowserMenuExtender_SelectedPaths>& CBMenuExtenders = ContentBrowserModule.GetAllPathViewContextMenuExtenders();
 
+	//add custom delegate to all the existing delegates
 	CBMenuExtenders.Add(FContentBrowserMenuExtender_SelectedPaths::CreateRaw(this, &FSuperManagerModule::CustomCBMenuExtenderCallback));
 }
 
+// to define the position for interesting menu entry
 TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtenderCallback(const TArray<FString>& SelectedPaths)
 {
 	TSharedRef<FExtender> MenuExtender(new FExtender());
@@ -41,7 +47,9 @@ TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtenderCallback(const TA
 			FName("Delete"),
 			EExtensionHook::After,
 			TSharedPtr<FUICommandList>(),
-			FMenuExtensionDelegate::CreateRaw(this, &FSuperManagerModule::AddCBMenuEntry));
+			/* second binding, will define details for custom menu entry */
+			FMenuExtensionDelegate::CreateRaw(this, &FSuperManagerModule::AddCBMenuEntry)
+		);
 
 		FolderPathSelected = SelectedPaths;
 	}
@@ -49,13 +57,22 @@ TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtenderCallback(const TA
 	return MenuExtender;
 }
 
+// define details for the custom menu entry
 void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 {
 	MenuBuilder.AddMenuEntry(
 		FText::FromString(TEXT("Delete Unused Assets")),
-		FText::FromString(TEXT("Unused Assets")),
+		FText::FromString(TEXT("Safely delete all unused assets")),
 		FSlateIcon(),
+		/* the actual function to execute */
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetButtonClicked)
+	);
+	MenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("Delete Empty Folder")),
+		FText::FromString(TEXT("Safely delete all empty folder")),
+		FSlateIcon(),
+		/* the actual function to execute */
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFolderButtonClicked)
 	);
 }
 
@@ -68,6 +85,8 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 	}
 
 	TArray<FString> ListAssets = UEditorAssetLibrary::ListAssets(FolderPathSelected[0]);
+
+	/* whether there are assets under the selected folder */
 	if (ListAssets.Num() == 0)
 	{
 		DebugHeader::ShowMessageDialog(EAppMsgType::Ok,TEXT("No asset found under selected folder"));
@@ -80,6 +99,8 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 		                               + TEXT(" found.\n Would you like to procceed?"));
 
 	if (MessageDialogReturnType == EAppReturnType::No) { return; }
+
+	FixUpRedirectors();
 
 	TArray<FAssetData> UnusedAssetDataList;
 	for (const FString& AssetPath : ListAssets)
@@ -95,6 +116,84 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 
 	if (UnusedAssetDataList.Num() > 0) { ObjectTools::DeleteAssets(UnusedAssetDataList); }
 	else { DebugHeader::ShowMessageDialog(EAppMsgType::Ok,TEXT("No unused asset found under selected folder")); }
+}
+
+void FSuperManagerModule::OnDeleteEmptyFolderButtonClicked()
+{
+	FixUpRedirectors();
+
+	TArray<FString> FolderPathArr = UEditorAssetLibrary::ListAssets(FolderPathSelected[0]);
+	uint32 Count = 0;
+
+	FString EmptyFolderPathName;
+	TArray<FString> EmptyFolderPathArr;
+
+	for (const FString& FolderPath : FolderPathArr)
+	{
+		if (FolderPath.Contains(TEXT("Developers")) || FolderPath.Contains(TEXT("Collections"))
+			|| FolderPath.Contains(TEXT("__ExternalActors__")) || FolderPath.Contains(TEXT("__ExternalObjects__"))) { continue; }
+
+		if (!UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) { continue; }
+
+		if (!UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath))
+		{
+			EmptyFolderPathName.Append(FolderPath);
+			EmptyFolderPathName.Append("\n");
+
+			EmptyFolderPathArr.Add(FolderPath);
+		}
+	}
+
+	if (EmptyFolderPathArr.Num() == 0)
+	{
+		DebugHeader::ShowMessageDialog(EAppMsgType::Ok,TEXT("No empty folder found"), false);
+		return;
+	}
+
+	EAppReturnType::Type MessageDialogReturnType = DebugHeader::ShowMessageDialog(
+		EAppMsgType::OkCancel,
+		TEXT("Empty folder found in: ") + EmptyFolderPathName + TEXT("\nWould you like to procceed?")
+		, false);
+
+	if (MessageDialogReturnType == EAppReturnType::Cancel) { return; }
+
+	for (const FString& EmptyFolderPath : EmptyFolderPathArr)
+	{
+		UEditorAssetLibrary::DeleteDirectory(EmptyFolderPath)
+			? ++Count
+			: DebugHeader::PrintMessage(TEXT("Failed to delete ") + EmptyFolderPath, FColor::Red);
+	}
+
+	if (Count > 0)
+	{
+		DebugHeader::ShowNotifyInfo(TEXT("Successfully deleted ") + FString::FromInt(Count) + TEXT(" folders"));
+	}
+}
+
+void FSuperManagerModule::FixUpRedirectors()
+{
+	TArray<UObjectRedirector*> Redirectors;
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::Get().LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+	FARFilter Filter;
+	Filter.bRecursivePaths = true;
+	Filter.PackagePaths.Add("/Game");
+	Filter.ClassPaths.Emplace("/Script/ObjectRedirector");
+
+	TArray<FAssetData> OutAssetDatas;
+	AssetRegistryModule.Get().GetAssets(Filter, OutAssetDatas);
+
+	for (FAssetData& AssetData : OutAssetDatas)
+	{
+		if (UObjectRedirector* Redirector = Cast<UObjectRedirector>(AssetData.GetAsset()))
+		{
+			Redirectors.AddUnique(Redirector);
+		}
+	}
+
+	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	AssetToolsModule.Get().FixupReferencers(Redirectors);
 }
 
 
