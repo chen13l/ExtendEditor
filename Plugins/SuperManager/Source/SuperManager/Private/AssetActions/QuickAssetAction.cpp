@@ -9,15 +9,15 @@
 
 void UQuickAssetAction::ExecuteAction()
 {
-	PrintMessage("Executing Quick Asset Action", FColor::Blue);
-	LogMessage("Working");
+	DebugHeader::PrintMessage("Executing Quick Asset Action", FColor::Blue);
+	DebugHeader::LogMessage("Working");
 }
 
 void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 {
 	if (NumOfDuplicates <= 0)
 	{
-		ShowMessageDialog(EAppMsgType::Ok,TEXT("Please enter a VALID number"));
+		DebugHeader::ShowMessageDialog(EAppMsgType::Ok,TEXT("Please enter a VALID number"));
 		return;
 	}
 
@@ -34,7 +34,7 @@ void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 
 			if (FPaths::FileExists(NewAssetPath))
 			{
-				PrintMessage(FString::Printf(TEXT("%s has existed"), *NewAssetPath), FColor::Red);
+				DebugHeader::PrintMessage(FString::Printf(TEXT("%s has existed"), *NewAssetPath), FColor::Red);
 				continue;
 			}
 
@@ -48,7 +48,7 @@ void UQuickAssetAction::DuplicateAssets(int32 NumOfDuplicates)
 
 	if (Counter > 0)
 	{
-		ShowNotifyInfo(TEXT("Successfully duplicated ") + FString::FromInt(Counter) + " files");
+		DebugHeader::ShowNotifyInfo(TEXT("Successfully duplicated ") + FString::FromInt(Counter) + " files");
 	}
 }
 
@@ -64,14 +64,14 @@ void UQuickAssetAction::AddPrefixes()
 		FString* Prefix = PrefixMap.Find(Object->GetClass());
 		if (!Prefix || Prefix->IsEmpty())
 		{
-			PrintMessage("Failed to find prefix for class", FColor::Red);
+			DebugHeader::PrintMessage("Failed to find prefix for class", FColor::Red);
 			continue;
 		}
 
 		FString ObjectName = Object->GetName();
 		if (ObjectName.StartsWith(*Prefix))
 		{
-			PrintMessage("prefix already added", FColor::Yellow);
+			DebugHeader::PrintMessage("prefix already added", FColor::Yellow);
 			continue;
 		}
 
@@ -87,7 +87,7 @@ void UQuickAssetAction::AddPrefixes()
 		++Counter;
 	}
 
-	if (Counter > 0) { ShowNotifyInfo(TEXT("Successfully rename "+FString::FromInt(Counter) + " assets")); }
+	if (Counter > 0) { DebugHeader::ShowNotifyInfo(TEXT("Successfully rename "+FString::FromInt(Counter) + " assets")); }
 }
 
 void UQuickAssetAction::RemoveUnusedAssets()
@@ -108,13 +108,13 @@ void UQuickAssetAction::RemoveUnusedAssets()
 
 	if (UnusedAssets.Num() == 0)
 	{
-		ShowMessageDialog(EAppMsgType::Ok,TEXT("No unused asset"), false);
+		DebugHeader::ShowMessageDialog(EAppMsgType::Ok,TEXT("No unused asset"), false);
 		return;
 	}
 
 	int32 DeleteAssetsNum = ObjectTools::DeleteAssets(UnusedAssets);
 	if (DeleteAssetsNum == 0){return;}
-	ShowNotifyInfo(TEXT("Successfully delete ") + FString::FromInt(DeleteAssetsNum) + " assets");
+	DebugHeader::ShowNotifyInfo(TEXT("Successfully delete ") + FString::FromInt(DeleteAssetsNum) + " assets");
 }
 
 void UQuickAssetAction::FixUpRedirectors()

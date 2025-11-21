@@ -16,7 +16,8 @@ public:
 private:
 #pragma region ContentBrowserMenuExtension
 	void InitContentBrowserMenuExtension();
-
+	
+	TArray<FString> FolderPathSelected;
 	TSharedRef<FExtender> CustomCBMenuExtenderCallback(const TArray<FString>& SelectedPaths);
 
 	void AddCBMenuEntry(FMenuBuilder& MenuBuilder);
