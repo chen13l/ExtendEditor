@@ -16,6 +16,7 @@ void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	InitContentBrowserMenuExtension();
+	RegisterAdvanceDeletionTab();
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -73,6 +74,13 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 		FSlateIcon(),
 		/* the actual function to execute */
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFolderButtonClicked)
+	);
+	MenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("Advanced Delete")),
+		FText::FromString(TEXT("List assets by specific condition in a tab for deleting")),
+		FSlateIcon(),
+		/* the actual function to execute */
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnAdvancedDeleteButtonClicked)
 	);
 }
 
@@ -159,15 +167,19 @@ void FSuperManagerModule::OnDeleteEmptyFolderButtonClicked()
 
 	for (const FString& EmptyFolderPath : EmptyFolderPathArr)
 	{
-		UEditorAssetLibrary::DeleteDirectory(EmptyFolderPath)
-			? ++Count
-			: DebugHeader::PrintMessage(TEXT("Failed to delete ") + EmptyFolderPath, FColor::Red);
+		if (UEditorAssetLibrary::DeleteDirectory(EmptyFolderPath)) { ++Count; }
+		else { DebugHeader::PrintMessage(TEXT("Failed to delete ") + EmptyFolderPath, FColor::Red); }
 	}
 
 	if (Count > 0)
 	{
 		DebugHeader::ShowNotifyInfo(TEXT("Successfully deleted ") + FString::FromInt(Count) + TEXT(" folders"));
 	}
+}
+
+void FSuperManagerModule::OnAdvancedDeleteButtonClicked()
+{
+	FGlobalTabmanager::Get()->TryInvokeTab(FName("AdvancedDeletion"));
 }
 
 void FSuperManagerModule::FixUpRedirectors()
@@ -199,6 +211,21 @@ void FSuperManagerModule::FixUpRedirectors()
 
 #pragma endregion ContentBrowserMenuExtension
 
+
+#pragma region CustomEditorTab
+void FSuperManagerModule::RegisterAdvanceDeletionTab()
+{
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
+		FName(TEXT("AdvancedDeletion")),
+		FOnSpawnTab::CreateRaw(this,&FSuperManagerModule::OnSpawnAdvanceDeletionTab)
+	).SetDisplayName(FText::FromString(TEXT("Advanced Deletion")));
+}
+
+TSharedRef<SDockTab> FSuperManagerModule::OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
+{
+	return SNew(SDockTab).TabRole(NomadTab);
+}
+#pragma endregion CustomEditorTab
 
 #undef LOCTEXT_NAMESPACE
 
