@@ -14,6 +14,9 @@ public:
 private:
 	TArray<TSharedPtr<FAssetData>> StoredAssetDatas;
 
+	TSharedRef<SListView<TSharedPtr<FAssetData>>> ConstructListView();
+	TSharedPtr<SListView<TSharedPtr<FAssetData>>> ConstructedListView;
+
 	TSharedRef<ITableRow> OnGenerateListRow(TSharedPtr<FAssetData> AssetDataToDisplay, const TSharedRef<STableViewBase>& OwnerTable);
 
 	TSharedRef<SCheckBox> ConstructCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay);
@@ -24,4 +27,5 @@ private:
 
 	TSharedRef<SButton> ConstructButton(const TSharedPtr<FAssetData>& AssetData);
 	FReply OnDeleteButtonClicked(TSharedPtr<FAssetData> ClickedAssetData);
+	void RefreshAssetListView();
 };

@@ -249,7 +249,7 @@ TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetsDataUnderSelecte
 
 		FString Tem;
 		AssetPath.Split(TEXT("."), &Tem, nullptr, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-		
+
 		if (!UEditorAssetLibrary::DoesAssetExist(Tem)) { continue; }
 
 		const FAssetData FindAssetData = UEditorAssetLibrary::FindAssetData(Tem);
@@ -259,7 +259,21 @@ TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetsDataUnderSelecte
 
 	return AvailableAssetDatas;
 }
+
 #pragma endregion CustomEditorTab
+
+#pragma region ProccessDataForAssetList
+bool FSuperManagerModule::DeleteSingleAssetForAssetList(const FAssetData& AssetDataToDelete)
+{
+	TArray<FAssetData> AssetDatas;
+	AssetDatas.Add(AssetDataToDelete);
+
+	if (ObjectTools::DeleteAssets(AssetDatas) > 0) { return true; }
+
+	return false;
+}
+
+#pragma endregion ProccessDataForAssetList
 
 #undef LOCTEXT_NAMESPACE
 

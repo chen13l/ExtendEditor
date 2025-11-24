@@ -1,6 +1,7 @@
 ﻿#include "SlateWidgets/AdvancedDeletionWidget.h"
 
 #include "DebugHeader.h"
+#include "SuperManager.h"
 
 void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 {
@@ -42,10 +43,7 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 
 			+ SScrollBox::Slot()
 			[
-				SNew(SListView<TSharedPtr<FAssetData>>)
-				.ItemHeight(24.f)
-				.ListItemsSource(&StoredAssetDatas)
-				.OnGenerateRow(this, &SAdvanceDeletionTab::OnGenerateListRow)
+				ConstructListView()
 			]
 		]
 
@@ -56,6 +54,17 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 			SNew(SHorizontalBox)
 		]
 	];
+}
+
+TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvanceDeletionTab::ConstructListView()
+{
+	ConstructedListView =
+		SNew(SListView<TSharedPtr<FAssetData>>)
+		.ItemHeight(24.f)
+		.ListItemsSource(&StoredAssetDatas)
+		.OnGenerateRow(this, &SAdvanceDeletionTab::OnGenerateListRow);
+
+	return ConstructedListView.ToSharedRef();
 }
 
 TSharedRef<ITableRow> SAdvanceDeletionTab::OnGenerateListRow(TSharedPtr<FAssetData> AssetDataToDisplay, const TSharedRef<STableViewBase>& OwnerTable)
@@ -168,5 +177,27 @@ TSharedRef<SButton> SAdvanceDeletionTab::ConstructButton(const TSharedPtr<FAsset
 FReply SAdvanceDeletionTab::OnDeleteButtonClicked(TSharedPtr<FAssetData> ClickedAssetData)
 {
 	DebugHeader::PrintMessage(ClickedAssetData->AssetName.ToString() + TEXT(" Clicked"), FColor::Green);
+
+	FSuperManagerModule SuperManagerModule = FModuleManager::Get().LoadModuleChecked<FSuperManagerModule>("SuperManager");
+	const bool bAssetDeleted = SuperManagerModule.DeleteSingleAssetForAssetList(*ClickedAssetData.Get());
+
+	if (bAssetDeleted)
+	{
+		if (StoredAssetDatas.Contains(ClickedAssetData))
+		{
+			StoredAssetDatas.Remove(ClickedAssetData);
+		}
+
+		RefreshAssetListView();
+	}
+
 	return FReply::Handled();
+}
+
+void SAdvanceDeletionTab::RefreshAssetListView()
+{
+	if (ConstructedListView.IsValid())
+	{
+		ConstructedListView->RebuildList();
+	}
 }
