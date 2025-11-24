@@ -248,7 +248,7 @@ TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetsDataUnderSelecte
 			|| AssetPath.Contains(TEXT("Maps"))) { continue; }
 
 		FString Tem;
-		AssetPath.Split(TEXT("."), &Tem, nullptr, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+		AssetPath.Split(TEXT("."), &Tem, nullptr, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 		
 		if (!UEditorAssetLibrary::DoesAssetExist(Tem)) { continue; }
 

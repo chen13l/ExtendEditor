@@ -14,5 +14,14 @@ public:
 private:
 	TArray<TSharedPtr<FAssetData>> StoredAssetDatas;
 
-	TSharedRef<ITableRow> OnGenerateListRow(TSharedPtr<FAssetData> AssetDataToDisplay,const TSharedRef<STableViewBase>& OwnerTable);
+	TSharedRef<ITableRow> OnGenerateListRow(TSharedPtr<FAssetData> AssetDataToDisplay, const TSharedRef<STableViewBase>& OwnerTable);
+
+	TSharedRef<SCheckBox> ConstructCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay);
+	void OnCheckBoxStateChanged(ECheckBoxState NewState, TSharedPtr<FAssetData> AssetData);
+
+	TSharedRef<STextBlock> ConstructTextBlock(const FString& TextContent, const FSlateFontInfo& FontInfo);
+	FORCEINLINE FSlateFontInfo GetFontInfo() const { return FCoreStyle::Get().GetFontStyle("EmbossedText"); }
+
+	TSharedRef<SButton> ConstructButton(const TSharedPtr<FAssetData>& AssetData);
+	FReply OnDeleteButtonClicked(TSharedPtr<FAssetData> ClickedAssetData);
 };
