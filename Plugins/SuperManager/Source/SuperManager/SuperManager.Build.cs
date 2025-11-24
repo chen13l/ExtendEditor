@@ -32,7 +32,8 @@ public class SuperManager : ModuleRules
 				"UMG",
 				"Niagara",
 				"UnrealEd",
-				"ContentBrowser"
+				"ContentBrowser",
+				"InputCore"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

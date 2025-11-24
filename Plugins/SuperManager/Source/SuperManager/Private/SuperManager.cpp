@@ -9,6 +9,7 @@
 #include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
+#include "SlateWidgets/AdvancedDeletionWidget.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -114,12 +115,16 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 	for (const FString& AssetPath : ListAssets)
 	{
 		if (AssetPath.Contains(TEXT("Developers")) || AssetPath.Contains(TEXT("Collections"))
-			|| AssetPath.Contains(TEXT("__ExternalActors__")) || AssetPath.Contains(TEXT("__ExternalObjects__"))) { continue; }
+			|| AssetPath.Contains(TEXT("__ExternalActors__")) || AssetPath.Contains(TEXT("__ExternalObjects__"))
+			|| AssetPath.Contains(TEXT("Maps"))) { continue; }
 
-		if (!UEditorAssetLibrary::DoesAssetExist(AssetPath)) { continue; }
+		FString Tem;
+		AssetPath.Split(TEXT("."), &Tem, nullptr, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
 
-		TArray<FString> PackageRefForAsset = UEditorAssetLibrary::FindPackageReferencersForAsset(AssetPath);
-		if (PackageRefForAsset.Num() == 0) { UnusedAssetDataList.Add(UEditorAssetLibrary::FindAssetData(AssetPath)); }
+		if (!UEditorAssetLibrary::DoesAssetExist(Tem)) { continue; }
+
+		TArray<FString> PackageRefForAsset = UEditorAssetLibrary::FindPackageReferencersForAsset(Tem);
+		if (PackageRefForAsset.Num() == 0) { UnusedAssetDataList.Add(UEditorAssetLibrary::FindAssetData(Tem)); }
 	}
 
 	if (UnusedAssetDataList.Num() > 0) { ObjectTools::DeleteAssets(UnusedAssetDataList); }
@@ -217,13 +222,42 @@ void FSuperManagerModule::RegisterAdvanceDeletionTab()
 {
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
 		FName(TEXT("AdvancedDeletion")),
-		FOnSpawnTab::CreateRaw(this,&FSuperManagerModule::OnSpawnAdvanceDeletionTab)
+		FOnSpawnTab::CreateRaw(this, &FSuperManagerModule::OnSpawnAdvanceDeletionTab)
 	).SetDisplayName(FText::FromString(TEXT("Advanced Deletion")));
 }
 
 TSharedRef<SDockTab> FSuperManagerModule::OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
 {
-	return SNew(SDockTab).TabRole(NomadTab);
+	return SNew(SDockTab).TabRole(NomadTab)
+		[
+			SNew(SAdvanceDeletionTab)
+			.AssetDatasToStored(GetAllAssetsDataUnderSelectedFolder())
+		];
+}
+
+TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetsDataUnderSelectedFolder()
+{
+	TArray<TSharedPtr<FAssetData>> AvailableAssetDatas;
+
+	TArray<FString> ListAssets = UEditorAssetLibrary::ListAssets(FolderPathSelected[0]);
+
+	for (const FString& AssetPath : ListAssets)
+	{
+		if (AssetPath.Contains(TEXT("Developers")) || AssetPath.Contains(TEXT("Collections"))
+			|| AssetPath.Contains(TEXT("__ExternalActors__")) || AssetPath.Contains(TEXT("__ExternalObjects__"))
+			|| AssetPath.Contains(TEXT("Maps"))) { continue; }
+
+		FString Tem;
+		AssetPath.Split(TEXT("."), &Tem, nullptr, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+		
+		if (!UEditorAssetLibrary::DoesAssetExist(Tem)) { continue; }
+
+		const FAssetData FindAssetData = UEditorAssetLibrary::FindAssetData(Tem);
+
+		AvailableAssetDatas.AddUnique(MakeShared<FAssetData>(FindAssetData));
+	}
+
+	return AvailableAssetDatas;
 }
 #pragma endregion CustomEditorTab
 
