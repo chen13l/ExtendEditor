@@ -3,13 +3,18 @@
 #include "DebugHeader.h"
 #include "SuperManager.h"
 
-BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION 
+#define ListAll TEXT("List all available assets")
+
+BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
+
 void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 {
 	bCanSupportFocus = true;
 
 	CheckBoxArr.Empty();
 	SelectedAssetDatas.Empty();
+
+	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListAll));
 
 	StoredAssetDatas = InArgs._AssetDatasToStored;
 
@@ -37,6 +42,12 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 		.AutoHeight()
 		[
 			SNew(SHorizontalBox)
+
+			// combo box slot
+			+ SHorizontalBox::Slot()
+			[
+				ConstructComboBox()
+			]
 		]
 
 		// slot for asset list
@@ -80,6 +91,7 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 		]
 	];
 }
+
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvanceDeletionTab::ConstructListView()
@@ -97,12 +109,45 @@ void SAdvanceDeletionTab::RefreshAssetListView()
 {
 	SelectedAssetDatas.Empty();
 	CheckBoxArr.Empty();
-	
+
 	if (ConstructedListView.IsValid())
 	{
 		ConstructedListView->RebuildList();
 	}
 }
+
+#pragma region ComboBoxForListingCondition
+TSharedRef<SComboBox<TSharedPtr<FString>>> SAdvanceDeletionTab::ConstructComboBox()
+{
+	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructedComboBox =
+		SNew(SComboBox<TSharedPtr<FString>>)
+		.OptionsSource(&ComboBoxSourceItems)
+		.OnGenerateWidget(this, &SAdvanceDeletionTab::OnGenerateComboBoxContent)
+		[
+			SAssignNew(ComboBoxDisplayText, STextBlock)
+			.Text(FText::FromString(TEXT("List Assets Options")))
+		];
+
+	return ConstructedComboBox;
+}
+
+TSharedRef<SWidget> SAdvanceDeletionTab::OnGenerateComboBoxContent(TSharedPtr<FString> SourceItem)
+{
+	TSharedRef<STextBlock> ConstructedTextBlock =
+		SNew(STextBlock)
+		.Text(FText::FromString(*SourceItem));
+
+	return ConstructedTextBlock;
+}
+
+
+void SAdvanceDeletionTab::OnComboSelectionChanged(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo)
+{
+	ComboBoxDisplayText->SetText(FText::FromString(*SelectedOption));
+
+	DebugHeader::PrintMessage(*SelectedOption);
+}
+#pragma endregion ComboBoxForListingCondition
 
 #pragma region RowWidgetForAssetListView
 TSharedRef<ITableRow> SAdvanceDeletionTab::OnGenerateListRow(TSharedPtr<FAssetData> AssetDataToDisplay, const TSharedRef<STableViewBase>& OwnerTable)
@@ -301,7 +346,7 @@ TSharedRef<SButton> SAdvanceDeletionTab::ConstructSelectAllButton()
 
 FReply SAdvanceDeletionTab::OnSelectAllButtonClicked()
 {
-	if (CheckBoxArr.Num() == 0){return FReply::Handled();}
+	if (CheckBoxArr.Num() == 0) { return FReply::Handled(); }
 
 	for (const TSharedRef<SCheckBox>& CheckBoxRef : CheckBoxArr)
 	{
@@ -310,7 +355,7 @@ FReply SAdvanceDeletionTab::OnSelectAllButtonClicked()
 			CheckBoxRef->ToggleCheckedState();
 		}
 	}
-	
+
 	return FReply::Handled();
 }
 
@@ -328,7 +373,7 @@ TSharedRef<SButton> SAdvanceDeletionTab::ConstructDeselectAllButton()
 
 FReply SAdvanceDeletionTab::OnDeselectAllButtonClicked()
 {
-	if (CheckBoxArr.Num() == 0){return FReply::Handled();}
+	if (CheckBoxArr.Num() == 0) { return FReply::Handled(); }
 
 	for (const TSharedRef<SCheckBox>& CheckBoxRef : CheckBoxArr)
 	{
@@ -337,7 +382,7 @@ FReply SAdvanceDeletionTab::OnDeselectAllButtonClicked()
 			CheckBoxRef->ToggleCheckedState();
 		}
 	}
-	
+
 	return FReply::Handled();
 }
 #pragma endregion TabButtons

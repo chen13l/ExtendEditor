@@ -12,7 +12,7 @@ public:
 	BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 	void Construct(const FArguments& InArgs);
 	END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-	
+
 private:
 	TArray<TSharedPtr<FAssetData>> StoredAssetDatas;
 
@@ -22,8 +22,19 @@ private:
 	TArray<TSharedRef<SCheckBox>> CheckBoxArr;
 
 	TArray<TSharedPtr<FAssetData>> SelectedAssetDatas;
-	
+
 	void RefreshAssetListView();
+
+#pragma region ComboBoxForListingCondition
+	TArray<TSharedPtr<FString>> ComboBoxSourceItems;
+	TSharedPtr<STextBlock> ComboBoxDisplayText;
+	
+	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructComboBox();
+
+	TSharedRef<SWidget> OnGenerateComboBoxContent(TSharedPtr<FString> InItemText);
+	void OnComboSelectionChanged(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo);
+
+#pragma endregion ComboBoxForListingCondition
 
 #pragma region RowWidgetForAssetListView
 	TSharedRef<ITableRow> OnGenerateListRow(TSharedPtr<FAssetData> AssetDataToDisplay, const TSharedRef<STableViewBase>& OwnerTable);
