@@ -298,6 +298,30 @@ void FSuperManagerModule::ListUnusedAssetsForAssetList(TArray<TSharedPtr<FAssetD
 	}
 }
 
+void FSuperManagerModule::ListSameNameAssetsForAssetList(TArray<TSharedPtr<FAssetData>>& AssetDatasToFilter,
+	TArray<TSharedPtr<FAssetData>>& OutAssetDatas)
+{
+	TArray<TSharedPtr<FAssetData>> OutDatas;
+	
+	TMap<FName, TArray<TSharedPtr<FAssetData>>> AssetInfoMap;
+
+	for (const TSharedPtr<FAssetData>& AssetData : AssetDatasToFilter)
+	{
+		FName AssetName = AssetData->AssetName;
+		if (AssetInfoMap.Contains(AssetName)){AssetInfoMap[AssetName].Add(AssetData);}
+	}
+
+	for (const auto& [AssetName, AssetDatas] : AssetInfoMap)
+	{
+		if (AssetDatas.Num() <= 1){continue;}
+
+		for (const TSharedPtr<FAssetData>& AssetData : AssetDatas)
+		{
+			OutDatas.AddUnique(AssetData);
+		}
+	}
+}
+
 #pragma endregion ProccessDataForAssetList
 
 #undef LOCTEXT_NAMESPACE

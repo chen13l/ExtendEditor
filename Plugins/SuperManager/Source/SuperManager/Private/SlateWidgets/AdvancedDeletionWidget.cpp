@@ -5,6 +5,7 @@
 
 #define ListAll TEXT("List all available assets")
 #define ListUnused TEXT("List all available unused assets")
+#define ListSameName TEXT("List all available assets with same name")
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
@@ -17,6 +18,7 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 
 	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListAll));
 	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListUnused));
+	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListSameName));
 
 	StoredAssetDatas = InArgs._AssetDatasToStored;
 	DisplayAssetDatas = StoredAssetDatas;
@@ -162,6 +164,10 @@ void SAdvanceDeletionTab::OnComboSelectionChanged(TSharedPtr<FString> SelectedOp
 	{
 		SuperManagerModule.ListUnusedAssetsForAssetList(StoredAssetDatas, DisplayAssetDatas);
 		RefreshAssetListView();
+	}
+	else if (*SelectedOption.Get() == ListSameName)
+	{
+		SuperManagerModule.ListSameNameAssetsForAssetList(StoredAssetDatas, DisplayAssetDatas);
 	}
 }
 #pragma endregion ComboBoxForListingCondition
