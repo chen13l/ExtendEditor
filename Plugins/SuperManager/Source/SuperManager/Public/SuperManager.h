@@ -8,7 +8,6 @@
 class FSuperManagerModule : public IModuleInterface
 {
 public:
-
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -16,7 +15,7 @@ public:
 private:
 #pragma region ContentBrowserMenuExtension
 	void InitContentBrowserMenuExtension();
-	
+
 	TArray<FString> FolderPathSelected;
 	TSharedRef<FExtender> CustomCBMenuExtenderCallback(const TArray<FString>& SelectedPaths);
 
@@ -41,6 +40,6 @@ public:
 #pragma region ProccessDataForAssetList
 	bool DeleteSingleAssetForAssetList(const FAssetData& AssetDataToDelete);
 	bool DeleteMultipleAssetsForAssetList(const TArray<FAssetData>& AssetsToDelete);
-	
+	void ListUnusedAssetsForAssetList(TArray<TSharedPtr<FAssetData>>& AssetDatasToFilter, TArray<TSharedPtr<FAssetData>>& OutAssetDatas);
 #pragma endregion ProccessDataForAssetList
 };

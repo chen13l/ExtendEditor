@@ -4,6 +4,7 @@
 #include "SuperManager.h"
 
 #define ListAll TEXT("List all available assets")
+#define ListUnused TEXT("List all available unused assets")
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
@@ -15,8 +16,10 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 	SelectedAssetDatas.Empty();
 
 	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListAll));
+	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListUnused));
 
 	StoredAssetDatas = InArgs._AssetDatasToStored;
+	DisplayAssetDatas = StoredAssetDatas;
 
 	FSlateFontInfo TitleFontInfo = FCoreStyle::Get().GetFontStyle(FName("EmbossedText"));
 	TitleFontInfo.Size = 30;
@@ -99,7 +102,7 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvanceDeletionTab::ConstructList
 	ConstructedListView =
 		SNew(SListView<TSharedPtr<FAssetData>>)
 		.ItemHeight(24.f)
-		.ListItemsSource(&StoredAssetDatas)
+		.ListItemsSource(&DisplayAssetDatas)
 		.OnGenerateRow(this, &SAdvanceDeletionTab::OnGenerateListRow);
 
 	return ConstructedListView.ToSharedRef();
@@ -146,6 +149,20 @@ void SAdvanceDeletionTab::OnComboSelectionChanged(TSharedPtr<FString> SelectedOp
 	ComboBoxDisplayText->SetText(FText::FromString(*SelectedOption));
 
 	DebugHeader::PrintMessage(*SelectedOption);
+
+	FSuperManagerModule& SuperManagerModule = FModuleManager::Get().LoadModuleChecked<FSuperManagerModule>("SuperManager");
+
+	// pass data to filter base on the selecting option
+	if (*SelectedOption.Get() == ListAll)
+	{
+		DisplayAssetDatas = StoredAssetDatas;
+		RefreshAssetListView();
+	}
+	else if (*SelectedOption.Get() == ListUnused)
+	{
+		SuperManagerModule.ListUnusedAssetsForAssetList(StoredAssetDatas, DisplayAssetDatas);
+		RefreshAssetListView();
+	}
 }
 #pragma endregion ComboBoxForListingCondition
 
@@ -321,10 +338,9 @@ FReply SAdvanceDeletionTab::OnDeleteAllButtonClicked()
 	{
 		for (const TSharedPtr<FAssetData> AssetDataPtr : SelectedAssetDatas)
 		{
-			if (StoredAssetDatas.Contains(AssetDataPtr))
-			{
-				StoredAssetDatas.Remove(AssetDataPtr);
-			}
+			if (StoredAssetDatas.Contains(AssetDataPtr)) { StoredAssetDatas.Remove(AssetDataPtr); }
+
+			if (DisplayAssetDatas.Contains(AssetDataPtr)) { DisplayAssetDatas.Remove(AssetDataPtr); }
 		}
 		RefreshAssetListView();
 	}

@@ -184,6 +184,8 @@ void FSuperManagerModule::OnDeleteEmptyFolderButtonClicked()
 
 void FSuperManagerModule::OnAdvancedDeleteButtonClicked()
 {
+	FixUpRedirectors();
+	
 	FGlobalTabmanager::Get()->TryInvokeTab(FName("AdvancedDeletion"));
 }
 
@@ -278,6 +280,22 @@ bool FSuperManagerModule::DeleteMultipleAssetsForAssetList(const TArray<FAssetDa
 	if (ObjectTools::DeleteAssets(AssetsToDelete) > 0) { return true; }
 
 	return false;
+}
+
+void FSuperManagerModule::ListUnusedAssetsForAssetList(TArray<TSharedPtr<FAssetData>>& AssetDatasToFilter,
+                                                       TArray<TSharedPtr<FAssetData>>& OutAssetDatas)
+{
+	OutAssetDatas.Empty();
+
+	for (const TSharedPtr<FAssetData>& AssetData : AssetDatasToFilter)
+	{
+		TArray<FString> RefForAsset = UEditorAssetLibrary::FindPackageReferencersForAsset(AssetData->GetSoftObjectPath().GetAssetPathString());
+
+		if (RefForAsset.Num() == 0)
+		{
+			OutAssetDatas.AddUnique(AssetData);
+		}
+	}
 }
 
 #pragma endregion ProccessDataForAssetList

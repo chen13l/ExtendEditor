@@ -15,6 +15,7 @@ public:
 
 private:
 	TArray<TSharedPtr<FAssetData>> StoredAssetDatas;
+	TArray<TSharedPtr<FAssetData>> DisplayAssetDatas;
 
 	TSharedRef<SListView<TSharedPtr<FAssetData>>> ConstructListView();
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> ConstructedListView;
