@@ -16,6 +16,7 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 	CheckBoxArr.Empty();
 	SelectedAssetDatas.Empty();
 
+	ComboBoxSourceItems.Empty();
 	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListAll));
 	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListUnused));
 	ComboBoxSourceItems.AddUnique(MakeShared<FString>(ListSameName));
@@ -23,7 +24,7 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 	StoredAssetDatas = InArgs._AssetDatasToStored;
 	DisplayAssetDatas = StoredAssetDatas;
 
-	FSlateFontInfo TitleFontInfo = FCoreStyle::Get().GetFontStyle(FName("EmbossedText"));
+	FSlateFontInfo TitleFontInfo = GetEmbossedTextFont();
 	TitleFontInfo.Size = 30;
 
 	ChildSlot
@@ -105,7 +106,9 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvanceDeletionTab::ConstructList
 		SNew(SListView<TSharedPtr<FAssetData>>)
 		.ItemHeight(24.f)
 		.ListItemsSource(&DisplayAssetDatas)
-		.OnGenerateRow(this, &SAdvanceDeletionTab::OnGenerateListRow);
+		.OnGenerateRow(this, &SAdvanceDeletionTab::OnGenerateListRow)
+		.OnMouseButtonClick(this,&SAdvanceDeletionTab::OnRowWidgetMouseButtonClicked)
+		;
 
 	return ConstructedListView.ToSharedRef();
 }
@@ -231,6 +234,13 @@ TSharedRef<ITableRow> SAdvanceDeletionTab::OnGenerateListRow(TSharedPtr<FAssetDa
 	return ListViewRowWidget;
 }
 
+void SAdvanceDeletionTab::OnRowWidgetMouseButtonClicked(TSharedPtr<FAssetData> ClickedData)
+{
+	FSuperManagerModule& SuperManagerModule = FModuleManager::Get().LoadModuleChecked<FSuperManagerModule>(TEXT("SuperManager"));
+
+	SuperManagerModule.SyncCBToClickedAssetForAssetList(ClickedData->GetSoftObjectPath().GetAssetPath().ToString());
+}
+
 TSharedRef<SCheckBox> SAdvanceDeletionTab::ConstructCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SCheckBox> ConstructCheckBox =
@@ -298,10 +308,9 @@ FReply SAdvanceDeletionTab::OnDeleteButtonClicked(TSharedPtr<FAssetData> Clicked
 
 	if (bAssetDeleted)
 	{
-		if (StoredAssetDatas.Contains(ClickedAssetData))
-		{
-			StoredAssetDatas.Remove(ClickedAssetData);
-		}
+		if (StoredAssetDatas.Contains(ClickedAssetData)){StoredAssetDatas.Remove(ClickedAssetData);}
+
+		if (DisplayAssetDatas.Contains(ClickedAssetData)){DisplayAssetDatas.Remove(ClickedAssetData);}
 
 		RefreshAssetListView();
 	}

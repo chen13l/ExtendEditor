@@ -322,6 +322,14 @@ void FSuperManagerModule::ListSameNameAssetsForAssetList(TArray<TSharedPtr<FAsse
 	}
 }
 
+void FSuperManagerModule::SyncCBToClickedAssetForAssetList(const FString& AssetPathToSync)
+{
+	TArray<FString> AssetPath;
+	AssetPath.Add(AssetPathToSync);
+
+	UEditorAssetLibrary::SyncBrowserToObjects(AssetPath);
+}
+
 #pragma endregion ProccessDataForAssetList
 
 #undef LOCTEXT_NAMESPACE
