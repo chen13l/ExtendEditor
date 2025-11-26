@@ -51,8 +51,27 @@ void SAdvanceDeletionTab::Construct(const FArguments& InArgs)
 
 			// combo box slot
 			+ SHorizontalBox::Slot()
+			.AutoWidth()
 			[
 				ConstructComboBox()
+			]
+
+			// help text for combo box slot
+			+ SHorizontalBox::Slot()
+			.FillWidth(.6f)
+			[
+				ConstructComboHelpText(
+					TEXT("Specify the listing condition in the drop down. Left mouse click to go to where asset located")
+					, ETextJustify::Center)
+			]
+
+			// help text for folder
+			+ SHorizontalBox::Slot()
+			.FillWidth(.1f)
+			[
+				ConstructComboHelpText(
+					TEXT("Current folder:\n") + InArgs._CurrentSelectedFolder
+					, ETextJustify::Right)
 			]
 		]
 
@@ -107,8 +126,7 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvanceDeletionTab::ConstructList
 		.ItemHeight(24.f)
 		.ListItemsSource(&DisplayAssetDatas)
 		.OnGenerateRow(this, &SAdvanceDeletionTab::OnGenerateListRow)
-		.OnMouseButtonClick(this,&SAdvanceDeletionTab::OnRowWidgetMouseButtonClicked)
-		;
+		.OnMouseButtonClick(this, &SAdvanceDeletionTab::OnRowWidgetMouseButtonClicked);
 
 	return ConstructedListView.ToSharedRef();
 }
@@ -172,6 +190,18 @@ void SAdvanceDeletionTab::OnComboSelectionChanged(TSharedPtr<FString> SelectedOp
 	{
 		SuperManagerModule.ListSameNameAssetsForAssetList(StoredAssetDatas, DisplayAssetDatas);
 	}
+}
+
+TSharedRef<STextBlock> SAdvanceDeletionTab::ConstructComboHelpText(const FString& InText, ETextJustify::Type InTextJustify)
+{
+	TSharedRef<STextBlock> ConstructedTextBlock =
+		SNew(STextBlock)
+		.Text(FText::FromString(*InText))
+		.Justification(InTextJustify)
+		.AutoWrapText(true)
+		;
+
+	return ConstructedTextBlock;
 }
 #pragma endregion ComboBoxForListingCondition
 
@@ -308,9 +338,9 @@ FReply SAdvanceDeletionTab::OnDeleteButtonClicked(TSharedPtr<FAssetData> Clicked
 
 	if (bAssetDeleted)
 	{
-		if (StoredAssetDatas.Contains(ClickedAssetData)){StoredAssetDatas.Remove(ClickedAssetData);}
+		if (StoredAssetDatas.Contains(ClickedAssetData)) { StoredAssetDatas.Remove(ClickedAssetData); }
 
-		if (DisplayAssetDatas.Contains(ClickedAssetData)){DisplayAssetDatas.Remove(ClickedAssetData);}
+		if (DisplayAssetDatas.Contains(ClickedAssetData)) { DisplayAssetDatas.Remove(ClickedAssetData); }
 
 		RefreshAssetListView();
 	}
